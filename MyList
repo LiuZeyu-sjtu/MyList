@@ -1,0 +1,359 @@
+#include<iostream>
+using namespace std;
+
+template<class T>
+class MyList{
+	template<class t> friend MyList<t> operator + (const MyList<t> &l1, const MyList<t> &l2); 
+    template<class t> friend MyList<t> operator + (const MyList<t> &l1, const T &item);
+	template<class t> friend ostream & operator<<(ostream &os, const MyList<t> &obj);
+private:
+	T *a;
+	int size;
+	int curlen;
+	void double_space();		//Double the size of the array when it is not big enough.
+public:
+	MyList<T>(){
+		size = 100;
+		curlen = 0;
+		a = new T[size];
+	}
+	MyList<T>(int num, const T &item);	//Repeat item for num times in the array.
+	MyList<T>(const MyList &l);			//Copy another MyList.
+    MyList<T>(T* arr, int len);			//Creat an array with the first len elements of arr.
+
+	void push(const T &item);			//Add item to the end of MyList.
+	T pop();							//Delete the last element of MyList,and return it.
+	void insert(int index, const T &item);//Insert item at the place of index.
+	void clean();						//Clean up the list.
+	int get_size();						//Return the number of elements in MyList.
+	void erase(int start, int end);		//Delete elements in MyList from start to end.
+	T get_item(int index);				//Return the index'th element.
+	MyList get_item(int start, int end);//Return elements in MyList from start to end (both side included, and negative numbers are acceptable).
+	int count(const T &item);			//Return the number of elements that is equal to item.
+	void remove(const T &item);			//Delete the first element in MyList which is equal to item.
+
+	MyList &operator = (const MyList &l);	//Bind together two MyLists.
+	MyList &operator += (const T &item);	//Same as push(T item), but return a new list without changing l1.
+	MyList &operator += (const MyList &l);	//Assign.
+	T &operator [](int index);				//Return the index'th element.
+
+	void sort(bool less=true);			//A quick sort of T which is comparable (upgrade if less=true, degrade otherwise).
+	void reverse();						//Reverse elements of MyList.
+
+	~MyList(){delete [] a;}
+};
+//===============================================================================================
+template <class T>
+void MyList<T>::double_space()
+{
+	T *tmp = a;
+	size *= 2;
+	a = new T[size];
+	for (int i=0; i<curlen; ++i) a[i] = tmp[i];
+	delete tmp;
+}
+
+template <class T>
+MyList<T>::MyList(int num, const T &item)
+{
+	size = num;
+	curlen = num;
+	a = new T[num];
+	for (int i=0; i<curlen; ++i) a[i] = item;
+ } 
+
+template <class T>
+MyList<T>::MyList(const MyList &l)
+{
+	size = l.size;
+	curlen = l.curlen;
+	a = new T[size];
+	for (int i=0; i<size; ++i) {
+		a[i] = l.a[i];
+	}
+}
+
+template <class T>
+MyList<T>::MyList(T* arr, int len)
+{
+	size = len;
+	curlen = size;
+	a = new T[size];
+	for (int i=0; i<len; ++i) {
+		a[i] = arr[i];
+	}
+}
+
+template <class T>
+void MyList<T>::push(const T &item)
+{
+	if (size == curlen) double_space();
+	a[curlen] = item;
+	++curlen;
+}
+
+template <class T>
+T MyList<T>::pop()
+{
+	try {
+		if (curlen == 0) throw curlen;
+		T tmp = a[curlen-1];
+		--curlen;
+		return tmp;
+	}
+	catch (int) {
+		cout << "Error occured: pop an empty list!" << endl;
+	} 
+}
+
+template <class T>
+void MyList<T>::insert(int index, const T &item)
+{
+	try {
+		if (index < 0 || index > curlen) throw index;
+		if (curlen == size) double_space();
+		for (int i=curlen; i>index; --i) {
+			a[i] = a[i-1];
+		}
+		a[index] = item;
+		++curlen;
+	}
+	catch (int) {
+		cout << "Error occured: index out of range!" << endl;
+	}
+}
+
+template <class T>
+void MyList<T>::clean()
+{
+	curlen = 0;
+}
+
+template <class T>
+int MyList<T>::get_size()
+{
+	return curlen;
+}
+
+template <class T>
+void MyList<T>::erase(int start, int end)
+{
+	try {
+		if (start + end > curlen) throw curlen;
+		curlen -= end;
+		for (int i=start; i<curlen; ++i) {
+			a[i] = a[i + end];
+		}
+	}
+	catch (int) {
+		cout << "Error occured: invalid value!" << endl;
+	} 
+}
+
+template <class T>
+T MyList<T>::get_item(int index)
+{
+	return a[index];
+}
+
+template <class T>
+MyList<T> MyList<T>::get_item(int start, int end)
+{
+	if (start < 0) start += curlen;
+	if (end < 0) end += curlen;
+	try {
+		if (start >= end || end > curlen) throw start;
+		MyList<T> tmp;
+		tmp.curlen = end - start + 1;
+		for (int i=start; i<=end; ++i) {
+			if (i-start == tmp.size) tmp.double_space(); 
+			tmp.a[i-start] = a[i];
+		}
+		return tmp;
+	}
+	catch (int) {
+		MyList<T> *tmp;
+		return *tmp;
+	}
+	
+}
+
+template <class T>
+int MyList<T>::count(const T &item)
+{
+	int num = 0;
+	for (int i=0; i<curlen; ++i) {
+		if (a[i] == item) ++num;
+	}
+	return num;
+}
+
+template <class T>
+void MyList<T>::remove(const T &item)
+{
+	int t;
+	for (int i=0; i<curlen; ++i) {
+		if (a[i] == item) {
+			t = i;
+			break;
+		}
+	}
+	for (int i=t; i<curlen; ++i) {
+		a[i] = a[i+1];
+	}
+	--curlen;
+}
+
+template <class T>
+MyList<T> operator + (const MyList<T> &l1, const MyList<T> &l2) 
+{
+	MyList<T> tmp = MyList<T>(l1);
+	for (int i=0; i<l2.curlen; ++i) {
+		if (i == tmp.size) tmp.double_space();
+		tmp.a[tmp.curlen] = l2.a[i];
+		++tmp.curlen;
+	}
+	return tmp;
+}
+
+template <class T>
+MyList<T> operator + (const MyList<T> &l1, const T &item)
+{
+	MyList<T> *tmp = MyList<T>(l1);
+	tmp.push(item);
+	return tmp;
+}
+
+template <class T>
+MyList<T> &MyList<T>::operator = (const MyList &l)
+{
+//	if (this == &l) return *this;
+//	delete [] a;
+	for (int i=0; i<l.curlen; ++i) {
+		if (i == size) double_space();
+		a[i] = l.a[i];
+	}
+	curlen = l.curlen;
+	return *this;
+}
+
+template <class T>
+MyList<T> &MyList<T>::operator += (const T &item)
+{
+	push(item);
+	return *this;
+}
+
+template <class T>
+MyList<T> &MyList<T>::operator += (const MyList<T> &l)
+{
+	for (int i=0; i<l.curlen; ++i) {
+		push(l.a[i]); 
+	}
+	return *this;
+}
+
+template <class T>
+T &MyList<T>::operator [](int index)
+{
+	return a[index];
+}
+
+template <class T>
+ostream & operator<<(ostream &os, const MyList<T> &obj)
+{
+	os << '[';
+	int y = obj.curlen;
+	for (int i=0; i<y-1; ++i) {
+		os << obj.a[i];
+		os << ',';
+	}
+	os << obj.a[y-1] << ']';
+	return os;
+}
+
+template <class T>
+void MyList<T>::sort(bool less)
+{
+	if (less) {
+		int lh, rh, k, temp;	
+		for (lh = 0; lh < curlen; ++lh) {
+			rh = lh;
+			for (k = lh; k < curlen; ++k) {
+				if (a[k] < a[rh]) rh = k;
+			}
+			temp = a[lh];
+			a[lh] = a[rh];
+			a[rh] = temp;
+		}
+	}
+	else {
+		int lh, rh, k, temp;	
+		for (lh = 0; lh < curlen; ++lh) {
+			rh = lh;
+			for (k = lh; k < curlen; ++k) {
+				if (a[k] > a[rh]) rh = k;
+			}
+			temp = a[lh];
+			a[lh] = a[rh];
+			a[rh] = temp;
+		}
+	}
+}
+
+template <class T>
+void MyList<T>::reverse()
+{
+	T *tmp = new T[curlen];
+	for (int i=0; i<curlen; ++i) {
+		tmp[i] = a[curlen-i-1];
+	}
+	for (int i=0; i<curlen; ++i) {
+		a[i] = tmp[i];
+	}
+	delete tmp;
+}
+
+
+//=============================================================================================
+int main(){
+	MyList<int> a, b;
+	int i;
+	for (i=0; i<5; ++i)
+		a.push(i);
+    // a = [0, 1, 2, 3, 4]
+	a[3] = 15; // a = [0, 1, 2, 15, 4]
+	a.sort(); // a = [0, 1, 2, 4, 15]
+	a.reverse(); // a = [15, 4, 2, 1, 0]
+	a += 12; // a = [15, 4, 2, 1, 0, 12]
+	
+	for (i=0; i<a.get_size(); ++i)
+		cout<<a[i]<<endl;
+		
+    b = a.get_item(4, -3); 
+
+	b = a.get_item(3, -1); // b = [1, 0, 12] 
+
+	a += b; // a = [15, 4, 2, 1, 0, 12, 1, 0, 12]
+	
+	for (i=0; i<a.get_size(); ++i)
+		cout<<a.get_item(i)<<endl;
+
+	cout<<a.count(5)<<endl;
+
+	b.clean(); // b = []
+
+	cout<<b.get_size()<<endl;
+
+	a.erase(2, 5); // a = [15, 4, 0, 12]
+	b = a + a; // b = [15, 4, 0, 12, 15, 4, 0, 12]
+	b.insert(3, 116); // b = [15, 4, 0, 116, 12, 15, 4, 0, 12]
+	b.remove(4); // b = [15, 0, 116, ...]
+	cout<<b<<endl;
+	MyList<double> c(10, 3.14);
+	for (i=0; i<100; ++i)
+		c.push(1.1*i);
+	cout<<c.get_item(100, 105)<<endl;
+	
+	return 0;
+}
